@@ -1,8 +1,6 @@
 """
 Клиент Auth API: регистрация, логин, установка Bearer в сессию.
 """
-from typing import Any, Dict
-
 import requests
 
 from constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
@@ -21,7 +19,7 @@ class AuthAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
-    def register_user(self, user_data: Dict[str, Any], expected_status: int = 201) -> requests.Response:
+    def register_user(self, user_data: dict, expected_status: int = 201) -> requests.Response:
         """
         POST /register — регистрация нового пользователя.
         :param user_data: Словарь с полями email, fullName, password, passwordRepeat, roles.
@@ -35,7 +33,7 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
-    def login_user(self, login_data: Dict[str, Any], expected_status: int = 200) -> requests.Response:
+    def login_user(self, login_data: dict, expected_status: int = 200) -> requests.Response:
         """
         POST /login — авторизация, возвращает accessToken и user в теле ответа.
         :param login_data: Словарь с полями email, password.
@@ -63,4 +61,4 @@ class AuthAPI(CustomRequester):
             raise KeyError("token is missing")
 
         token = response["accessToken"]
-        self._update_session_headers(**{"authorization": "Bearer " + token})
+        self._update_session_headers({"authorization": "Bearer " + token})

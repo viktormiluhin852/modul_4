@@ -2,6 +2,7 @@
 Тесты для эндпоинта аутентификации (Auth API).
 Регистрация, логин и негативные сценарии.
 """
+from api.api_manager import ApiManager
 
 
 class TestAuthApi:
@@ -9,7 +10,7 @@ class TestAuthApi:
 
     # --- POST /register ---
 
-    def test_register_user(self, api_manager, fresh_user):
+    def test_register_user(self, api_manager: ApiManager, fresh_user: dict) -> None:
         """Позитив: регистрация пользователя с данными из фикстуры — 201, в ответе email, id, roles."""
         response = api_manager.auth_api.register_user(fresh_user)
         response_data = response.json()
@@ -21,7 +22,7 @@ class TestAuthApi:
 
     # --- POST /login ---
 
-    def test_auth_user_success(self, api_manager, login_data):
+    def test_auth_user_success(self, api_manager: ApiManager, login_data: dict) -> None:
         """Позитив: логин с валидными кредами — 200, в ответе accessToken и user.email."""
         response = api_manager.auth_api.login_user(login_data)
         data = response.json()
@@ -29,21 +30,21 @@ class TestAuthApi:
         assert "accessToken" in data
         assert login_data["email"] == data.get("user", {}).get("email")
 
-    def test_auth_user_fail_password_is_not_true(self, api_manager, login_data):
+    def test_auth_user_fail_password_is_not_true(self, api_manager: ApiManager, login_data: dict) -> None:
         """Негатив: логин с неверным паролем — 401, сообщение об ошибке."""
         wrong_login = {**login_data, "password": "pass"}
         response = api_manager.auth_api.login_user(wrong_login, expected_status=401)
 
         assert response.json().get("message") == "Неверный логин или пароль"
 
-    def test_auth_user_fail_email_is_not_exist(self, api_manager, login_data):
+    def test_auth_user_fail_email_is_not_exist(self, api_manager: ApiManager, login_data: dict) -> None:
         """Негатив: логин с несуществующим email — 401, сообщение об ошибке."""
         wrong_login = {**login_data, "email": login_data["email"] + "wrong"}
         response = api_manager.auth_api.login_user(wrong_login, expected_status=401)
 
         assert response.json().get("message") == "Неверный логин или пароль"
 
-    def test_auth_user_fail_body_is_empty(self, api_manager):
+    def test_auth_user_fail_body_is_empty(self, api_manager: ApiManager) -> None:
         """Негатив: логин с пустым телом — 401, сообщение об ошибке."""
         response = api_manager.auth_api.login_user({}, expected_status=401)
 

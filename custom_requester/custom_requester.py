@@ -4,7 +4,7 @@
 import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import requests
 
@@ -34,8 +34,8 @@ class CustomRequester:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        data: Optional[dict] = None,
+        params: Optional[Dict[str, str]] = None,
         expected_status: int = 200,
         need_logging: bool = True,
     ) -> requests.Response:
@@ -50,8 +50,9 @@ class CustomRequester:
         :return: requests.Response.
         """
 
-        url = f"{self.base_url}{endpoint}"
-        response = self.session.request(method, url, json=data, params=params, headers=self.headers)
+        response = self.session.request(
+            method, f"{self.base_url}{endpoint}", json=data, params=params, headers=self.headers
+        )
 
         if need_logging:
             self.log_request_and_response(response)
@@ -61,14 +62,13 @@ class CustomRequester:
 
         return response
 
-    def _update_session_headers(self, **kwargs: Any) -> None:
+    def _update_session_headers(self, headers: Dict[str, str]) -> None:
         """
         Добавляет заголовки в self.headers и в session.headers (например, Authorization: Bearer ...).
-        :param kwargs: Пары имя_заголовка=значение.
+        :param headers: Словарь имя_заголовка -> значение.
         """
-
-        self.headers.update(kwargs)
-        self.session.headers.update(kwargs)
+        self.headers.update(headers)
+        self.session.headers.update(headers)
 
     def log_request_and_response(self, response: requests.Response) -> None:
         """

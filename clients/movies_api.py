@@ -1,7 +1,7 @@
 """
 Клиент Movies API: список фильмов, CRUD по фильму (хост api.dev-cinescope).
 """
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import requests
 
@@ -22,7 +22,7 @@ class MoviesAPI(CustomRequester):
         """
         super().__init__(session, base_url=base_url)
 
-    def get_movies(self, params: Optional[Dict[str, Any]] = None, expected_status: int = 200) -> requests.Response:
+    def get_movies(self, params: Optional[Dict[str, str]] = None, expected_status: int = 200) -> requests.Response:
         """
         GET /movies — список афиш с пагинацией и фильтрами.
         :param params: Опциональные query: pageSize, page, minPrice, maxPrice, locations, published, genreId, createdAt.
@@ -49,7 +49,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def create_movie(self, data: Dict[str, Any], expected_status: int = 201) -> requests.Response:
+    def create_movie(self, data: dict, expected_status: int = 201) -> requests.Response:
         """
         POST /movies — создание фильма. Требуется SUPER_ADMIN.
         :param data: Словарь: name, price, description, imageUrl, location, published, genreId.
@@ -63,7 +63,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def edit_movie(self, movie_id: int, data: Dict[str, Any], expected_status: int = 200) -> requests.Response:
+    def edit_movie(self, movie_id: int, data: dict, expected_status: int = 200) -> requests.Response:
         """
         PATCH /movies/{id} — редактирование фильма. Требуется SUPER_ADMIN.
         :param movie_id: Идентификатор фильма.

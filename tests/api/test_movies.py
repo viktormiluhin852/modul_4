@@ -2,7 +2,7 @@
 Тесты для эндпоинта /movies (API Movies).
 Используются креды админа для операций, требующих SUPER_ADMIN.
 """
-import pytest
+from api.api_manager import ApiManager
 from utils.data_generator import DataGenerator
 
 
@@ -11,7 +11,7 @@ class TestMoviesApi:
 
     # --- GET /movies ---
 
-    def test_get_movies_success(self, api_manager):
+    def test_get_movies_success(self, api_manager: ApiManager) -> None:
         """Позитив: получение списка фильмов возвращает 200 и корректную структуру."""
         response = api_manager.movies_api.get_movies()
         data = response.json()
@@ -23,7 +23,7 @@ class TestMoviesApi:
         assert "pageCount" in data
         assert isinstance(data["movies"], list)
 
-    def test_get_movies_with_filters_page_size(self, api_manager):
+    def test_get_movies_with_filters_page_size(self, api_manager: ApiManager) -> None:
         """Позитив: фильтр pageSize ограничивает количество записей на странице."""
         page_size = 3
         response = api_manager.movies_api.get_movies(params={"pageSize": page_size})
@@ -32,7 +32,7 @@ class TestMoviesApi:
         assert data["pageSize"] == page_size
         assert len(data["movies"]) <= page_size
 
-    def test_get_movies_with_filters_min_max_price(self, api_manager):
+    def test_get_movies_with_filters_min_max_price(self, api_manager: ApiManager) -> None:
         """Позитив: фильтры minPrice и maxPrice сужают выборку по цене."""
         response = api_manager.movies_api.get_movies(
             params={"minPrice": 100, "maxPrice": 500}
@@ -42,7 +42,7 @@ class TestMoviesApi:
         for movie in data["movies"]:
             assert 100 <= movie["price"] <= 500
 
-    def test_get_movies_with_filter_locations(self, api_manager):
+    def test_get_movies_with_filter_locations(self, api_manager: ApiManager) -> None:
         """Позитив: фильтр locations (массив MSK/SPB) возвращает только подходящие фильмы."""
         response = api_manager.movies_api.get_movies(params={"locations": ["MSK"]})
         data = response.json()
@@ -50,7 +50,7 @@ class TestMoviesApi:
         for movie in data["movies"]:
             assert movie["location"] == "MSK"
 
-    def test_get_movies_invalid_params_400(self, api_manager):
+    def test_get_movies_invalid_params_400(self, api_manager: ApiManager) -> None:
         """Негатив: неверные параметры (pageSize вне 1–20) — 400."""
         response = api_manager.movies_api.get_movies(
             params={"pageSize": 0},
@@ -60,7 +60,7 @@ class TestMoviesApi:
 
     # --- GET /movies/{id} ---
 
-    def test_get_movie_by_id_success(self, created_movie, api_manager):
+    def test_get_movie_by_id_success(self, created_movie: dict, api_manager: ApiManager) -> None:
         """Позитив: получение фильма по id возвращает 200 и данные фильма."""
         movie_id = created_movie["id"]
         response = api_manager.movies_api.get_movie(movie_id)
@@ -73,7 +73,7 @@ class TestMoviesApi:
         assert "location" in data
         assert "reviews" in data
 
-    def test_get_movie_not_found_404(self, api_manager):
+    def test_get_movie_not_found_404(self, api_manager: ApiManager) -> None:
         """Негатив: запрос по несуществующему id — 404."""
         response = api_manager.movies_api.get_movie(99999999, expected_status=404)
         assert response.status_code == 404
@@ -81,7 +81,7 @@ class TestMoviesApi:
 
     # --- POST /movies ---
 
-    def test_create_movie_success(self, api_manager_admin, movie_data):
+    def test_create_movie_success(self, api_manager_admin: ApiManager, movie_data: dict) -> None:
         """Позитив: создание фильма с данными из фикстуры — 201."""
         response = api_manager_admin.movies_api.create_movie(movie_data)
         data = response.json()
@@ -94,7 +94,7 @@ class TestMoviesApi:
 
         api_manager_admin.movies_api.delete_movie(data["id"])
 
-    def test_create_movie_duplicate_name_409(self, api_manager_admin, created_movie):
+    def test_create_movie_duplicate_name_409(self, api_manager_admin: ApiManager, created_movie: dict) -> None:
         """Негатив: создание фильма с уже существующим названием — 409."""
         duplicate_data = {
             "name": created_movie["name"],
@@ -110,7 +110,7 @@ class TestMoviesApi:
         )
         assert response.status_code == 409
 
-    def test_create_movie_invalid_body_400(self, api_manager_admin):
+    def test_create_movie_invalid_body_400(self, api_manager_admin: ApiManager) -> None:
         """Негатив: создание без обязательных полей — 400."""
         invalid_data = {"name": "Только название"}
 
@@ -121,7 +121,7 @@ class TestMoviesApi:
 
     # --- PATCH /movies/{id} ---
 
-    def test_edit_movie_success(self, api_manager_admin, created_movie):
+    def test_edit_movie_success(self, api_manager_admin: ApiManager, created_movie: dict) -> None:
         """Позитив: редактирование фильма — 200, данные обновлены."""
         movie_id = created_movie["id"]
         update_data = {
@@ -141,7 +141,7 @@ class TestMoviesApi:
         assert data["price"] == update_data["price"]
         assert data["location"] == update_data["location"]
 
-    def test_edit_movie_not_found_404(self, api_manager_admin, movie_data):
+    def test_edit_movie_not_found_404(self, api_manager_admin: ApiManager, movie_data: dict) -> None:
         """Негатив: редактирование несуществующего фильма — 404."""
         response = api_manager_admin.movies_api.edit_movie(
             99999999, movie_data, expected_status=404
@@ -150,7 +150,7 @@ class TestMoviesApi:
 
     # --- DELETE /movies/{id} ---
 
-    def test_delete_movie_not_found_404(self, api_manager_admin):
+    def test_delete_movie_not_found_404(self, api_manager_admin: ApiManager) -> None:
         """Негатив: удаление несуществующего фильма — 404."""
         response = api_manager_admin.movies_api.delete_movie(
             99999999, expected_status=404

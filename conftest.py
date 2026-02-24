@@ -2,7 +2,7 @@
 Фикстуры pytest: пользователи (test_user, fresh_user, registered_user), сессия, api_manager,
 админ-сессия для Movies, данные фильма и созданный фильм с очисткой.
 """
-from typing import Any, Dict, Generator
+from typing import Generator
 
 import pytest
 import requests
@@ -17,7 +17,7 @@ faker = Faker()
 
 
 @pytest.fixture(scope="session")
-def test_user() -> Dict[str, Any]:
+def test_user() -> dict:
     """
     Один пользователь на всю сессию: для тестов логина.
     """
@@ -35,7 +35,7 @@ def test_user() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="function")
-def fresh_user() -> Dict[str, Any]:
+def fresh_user() -> dict:
     """
     Данные нового пользователя на каждый тест (для test_register_user).
     Генерируются заново при каждом запросе фикстуры.
@@ -51,7 +51,7 @@ def fresh_user() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def registered_user(api_manager: ApiManager, test_user: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
+def registered_user(api_manager: ApiManager, test_user: dict) -> Generator[dict, None, None]:
     """
     Регистрирует test_user один раз за сессию, отдаёт данные для тестов.
     После всех тестов удаляет пользователя через UserAPI.delete_user.
@@ -68,7 +68,7 @@ def registered_user(api_manager: ApiManager, test_user: Dict[str, Any]) -> Gener
 
 
 @pytest.fixture
-def login_data(registered_user: Dict[str, Any]) -> Dict[str, str]:
+def login_data(registered_user: dict) -> dict:
     """Тело запроса для POST /login: email и password зарегистрированного пользователя."""
     return {
         "email": registered_user["email"],
@@ -103,7 +103,7 @@ def api_manager_admin(api_manager: ApiManager) -> ApiManager:
 
 
 @pytest.fixture(scope="function")
-def movie_data() -> Dict[str, Any]:
+def movie_data() -> dict:
     """
     Данные фильма для создания (как test_user для auth).
     Собирается из отдельных генераторов полей.
@@ -120,7 +120,7 @@ def movie_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def created_movie(api_manager_admin: ApiManager, movie_data: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
+def created_movie(api_manager_admin: ApiManager, movie_data: dict) -> Generator[dict, None, None]:
     """
     Создаёт фильм через POST /movies, отдаёт копию movie_data с полем id.
     В teardown удаляет фильм через DELETE /movies/{id}.

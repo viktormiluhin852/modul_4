@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 import requests
 
-from constants import BASE_URL, MOVIES_ENDPOINT
+from constants.constants import BASE_URL, MOVIES_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
 
 
@@ -33,7 +33,7 @@ class MoviesAPI(CustomRequester):
             method="GET",
             endpoint=MOVIES_ENDPOINT,
             params=params,
-            expected_status=expected_status,
+            expected_status=expected_status
         )
 
     def get_movie(self, movie_id: int, expected_status: int = 200) -> requests.Response:
@@ -52,7 +52,7 @@ class MoviesAPI(CustomRequester):
     def create_movie(self, data: dict, expected_status: int = 201) -> requests.Response:
         """
         POST /movies — создание фильма. Требуется SUPER_ADMIN.
-        :param data: Словарь: name, price, description, imageUrl, location, published, genreId.
+        :param data: Тело запроса: name, price, description, imageUrl, location, published, genreId (dict или MoviePayload.model_dump()).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
@@ -67,7 +67,7 @@ class MoviesAPI(CustomRequester):
         """
         PATCH /movies/{id} — редактирование фильма. Требуется SUPER_ADMIN.
         :param movie_id: Идентификатор фильма.
-        :param data: Поля для обновления (name, description, price, location, imageUrl, published, genreId).
+        :param data: Поля для обновления: name, description, price, location, imageUrl, published, genreId (dict или MoviePayload.model_dump()).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
         :return: requests.Response.
         """

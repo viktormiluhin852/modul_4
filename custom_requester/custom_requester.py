@@ -7,6 +7,9 @@ import os
 from typing import Dict, Optional
 
 import requests
+from pydantic import BaseModel
+
+from constants.constants import GREEN, RESET, RED
 
 
 class CustomRequester:
@@ -34,7 +37,7 @@ class CustomRequester:
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict] = None,
+        data: Optional[dict | BaseModel] = None,
         params: Optional[Dict[str, str]] = None,
         expected_status: int = 200,
         need_logging: bool = True,
@@ -43,12 +46,15 @@ class CustomRequester:
         Отправляет HTTP-запрос и проверяет статус ответа.
         :param method: HTTP-метод (GET, POST, PATCH, DELETE и т.д.).
         :param endpoint: Путь эндпоинта (например, "/login"), склеивается с base_url.
-        :param data: Тело запроса (словарь, уходит как JSON).
+        :param data: Тело запроса: dict или Pydantic BaseModel (сериализуется в JSON).
         :param params: Query-параметры (словарь).
         :param expected_status: Ожидаемый HTTP-статус; при несовпадении — ValueError.
         :param need_logging: Логировать ли запрос и ответ в виде curl.
         :return: requests.Response.
         """
+
+        if isinstance(data, BaseModel):
+            data = json.loads(data.model_dump_json(exclude_unset=True))
 
         response = self.session.request(
             method, f"{self.base_url}{endpoint}", json=data, params=params, headers=self.headers
@@ -72,15 +78,14 @@ class CustomRequester:
 
     def log_request_and_response(self, response: requests.Response) -> None:
         """
-        Пишет в лог пример curl для запроса и тело/статус ответа.
-        :param response: Объект requests.Response после выполнения запроса.
+        Логгирование запросов и ответов. Настройки логгирования описаны в pytest.ini
+        Преобразует вывод в curl-like (-H хэдэеры), (-d тело)
+
+        :param response: Объект response получаемый из метода "send_request"
         """
 
         try:
             request = response.request
-            GREEN = '\033[32m'
-            RED = '\033[31m'
-            RESET = '\033[0m'
             headers = " \\\n".join([f"=H '{header}: {value}'" for header, value in request.headers.items()])
             full_test_name = f"pytest {os.environ.get('PYTEST_CURRENT_TEST', '').replace(' (call)', '')}"
 
@@ -88,6 +93,8 @@ class CustomRequester:
             if hasattr(request, 'body') and request.body is not None:
                 if isinstance(request.body, bytes):
                     body = request.body.decode('utf-8')
+                elif isinstance(request.body, str):
+                    body = request.body
                 body = f"-d '{body}' \n" if body != '{}' else ''
 
             # Логируем запрос

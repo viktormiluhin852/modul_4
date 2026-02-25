@@ -3,8 +3,9 @@
 """
 import requests
 
-from constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
+from constants.constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from models.base_models import UserPayload
 
 
 class AuthAPI(CustomRequester):
@@ -19,10 +20,10 @@ class AuthAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
-    def register_user(self, user_data: dict, expected_status: int = 201) -> requests.Response:
+    def register_user(self, user_data: UserPayload, expected_status: int = 201) -> requests.Response:
         """
         POST /register — регистрация нового пользователя.
-        :param user_data: Словарь с полями email, fullName, password, passwordRepeat, roles.
+        :param user_data: Модель UserPayload (email, fullName, password, passwordRepeat, roles).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
@@ -33,11 +34,11 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
-    def login_user(self, login_data: dict, expected_status: int = 200) -> requests.Response:
+    def login_user(self, login_data: dict, expected_status: int = 201) -> requests.Response:
         """
         POST /login — авторизация, возвращает accessToken и user в теле ответа.
         :param login_data: Словарь с полями email, password.
-        :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
+        :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
         return self.send_request(

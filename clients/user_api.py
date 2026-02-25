@@ -2,10 +2,13 @@
 Клиент User API: получение и удаление пользователей (Auth-хост).
 """
 import requests
+import pytest
 
-from constants import AUTH_BASE_URL, USER_ENDPOINT
+from constants.constants import AUTH_BASE_URL, USER_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from models.base_models import UserPayload
 
+pytestmark = pytest.mark.api
 
 class UserAPI(CustomRequester):
     """
@@ -19,16 +22,16 @@ class UserAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
-    def get_user_info(self, user_id: str, expected_status: int = 200) -> requests.Response:
+    def get_user_info(self, user_locator: str, expected_status: int = 200) -> requests.Response:
         """
-        GET /user/{id} — получение информации о пользователе.
-        :param user_id: Идентификатор пользователя (UUID).
+        GET /user/{locator} — получение информации о пользователе.
+        :param user_locator: Идентификатор пользователя (UUID) или email.
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
         :return: requests.Response.
         """
         return self.send_request(
             method="GET",
-            endpoint=f"{USER_ENDPOINT}/{user_id}",
+            endpoint=f"{USER_ENDPOINT}/{user_locator}",
             expected_status=expected_status
         )
 
@@ -42,5 +45,19 @@ class UserAPI(CustomRequester):
         return self.send_request(
             method="DELETE",
             endpoint=f"{USER_ENDPOINT}/{user_id}",
+            expected_status=expected_status
+        )
+
+    def create_user(self, user_data: UserPayload, expected_status: int = 201) -> requests.Response:
+        """
+        POST /user — создание пользователя. Требуется SUPER_ADMIN.
+        :param user_data: Модель UserPayload.
+        :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
+        :return: requests.Response.
+        """
+        return self.send_request(
+            method="POST",
+            endpoint=USER_ENDPOINT,
+            data=user_data.model_dump(mode="json"),
             expected_status=expected_status
         )

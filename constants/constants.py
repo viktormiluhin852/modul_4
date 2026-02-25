@@ -20,7 +20,8 @@ HEADERS: Dict[str, str] = {
     "Accept": "application/json"
 }
 
-# Креды админа для API Movies (все роли, в т.ч. SUPER_ADMIN)
-ADMIN_EMAIL: str = "api1@gmail.com"
-ADMIN_PASSWORD: str = "asdqwe123Q"
+# Цвета
+GREEN: str = '\033[32m'
+RED: str = '\033[31m'
+RESET: str = '\033[0m'
 

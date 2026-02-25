@@ -1,11 +1,12 @@
 """
 Генерация случайных тестовых данных: пользователи (email, имя, пароль), фильмы (название, описание, цена и т.д.).
 """
+import datetime
 import random
 import string
 import uuid
 from faker import Faker
-from constants import MOVIE_GENRE_IDS
+from constants.constants import MOVIE_GENRE_IDS
 
 faker = Faker()
 
@@ -15,6 +16,10 @@ class DataGenerator:
     Статические методы для генерации полей при создании пользователей и фильмов в тестах.
     Уникальные значения уменьшают коллизии при повторных запусках.
     """
+
+    @staticmethod
+    def generate_random_int(max: int) -> int:
+        return random.randint(1, max)
 
     @staticmethod
     def generate_random_email() -> str:
@@ -84,6 +89,23 @@ class DataGenerator:
     def generate_random_movie_genre_id() -> int:
         """Случайный id жанра из списка существующих (GET /genres)."""
         return random.choice(MOVIE_GENRE_IDS)
+
+    @staticmethod
+    def generate_user_data() -> dict:
+        """Генерирует данные для тестового пользователя"""
+        from uuid import uuid4
+
+        return {
+            'id': f'{uuid4()}',  # генерируем UUID как строку
+            'email': DataGenerator.generate_random_email(),
+            'full_name': DataGenerator.generate_random_name(),
+            'password': DataGenerator.generate_random_password(),
+            'created_at': datetime.datetime.now(),
+            'updated_at': datetime.datetime.now(),
+            'verified': False,
+            'banned': False,
+            'roles': '{USER}'
+        }
 
 
 

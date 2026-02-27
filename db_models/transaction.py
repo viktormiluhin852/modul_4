@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, DeclarativeMeta
 
-Base = declarative_base()
+Base: DeclarativeMeta = declarative_base()
 
 
 class AccountTransactionTemplate(Base):

@@ -5,7 +5,7 @@ import requests
 
 from constants.constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
-from models.base_models import UserPayload
+from models.base_models import LoginPayload, UserPayload
 
 
 class AuthAPI(CustomRequester):
@@ -34,17 +34,19 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
-    def login_user(self, login_data: dict, expected_status: int = 201) -> requests.Response:
+    def login_user(
+        self, login_data: LoginPayload | None, expected_status: int = 201
+    ) -> requests.Response:
         """
         POST /login — авторизация, возвращает accessToken и user в теле ответа.
-        :param login_data: Словарь с полями email, password.
+        :param login_data: Модель LoginPayload (email, password) или None для пустого тела.
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
         return self.send_request(
             method="POST",
             endpoint=LOGIN_ENDPOINT,
-            data=login_data,
+            data={} if login_data is None else login_data,
             expected_status=expected_status
         )
 
@@ -56,7 +58,7 @@ class AuthAPI(CustomRequester):
         :param password: Пароль.
         :raises KeyError: Если в ответе нет accessToken.
         """
-        login_data = {"email": email, "password": password}
+        login_data = LoginPayload(email=email, password=password)
         response = self.login_user(login_data).json()
         if "accessToken" not in response:
             raise KeyError("token is missing")

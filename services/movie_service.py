@@ -4,7 +4,6 @@
 from db_models.movies import MovieDBModel
 from db_requester.db_helpers import DBHelper
 from models.base_models import MoviePayload
-from utils.db_mappers import movie_payload_to_db_dict
 
 
 class MovieService:
@@ -13,8 +12,8 @@ class MovieService:
 
     def create_movie(self, payload: MoviePayload) -> MovieDBModel:
         """Создаёт фильм в БД: маппинг payload → dict, затем запись через репозиторий."""
-        data = movie_payload_to_db_dict(payload)
-        return self._repository.create_test_movie(data)
+        # Передаём модель в репозиторий — он сам выполнит маппинг
+        return self._repository.create_test_movie(payload)
 
     def get_movie_by_name(self, name: str) -> MovieDBModel | None:
         """Возвращает фильм по названию или None."""

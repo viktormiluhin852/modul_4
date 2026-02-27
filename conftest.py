@@ -11,12 +11,12 @@ from faker import Faker
 from sqlalchemy.orm import Session
 
 from db_models.user import UserDBModel
-from db_requester.db_client import get_db_session
+from db_requester.db_client import DBClient
 
 from api.api_manager import ApiManager
 from enums.roles import Roles
 from entities.user import User
-from models.base_models import UserPayload, MoviePayload, MovieResponse
+from models.base_models import LoginPayload, UserPayload, MoviePayload, MovieResponse
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
 from db_requester.db_helpers import DBHelper
@@ -75,12 +75,9 @@ def registered_user(api_manager: ApiManager, test_user: UserPayload) -> Generato
 
 
 @pytest.fixture
-def login_data(registered_user: UserPayload) -> dict:
+def login_data(registered_user: UserPayload) -> LoginPayload:
     """Тело запроса для POST /login: email и password зарегистрированного пользователя."""
-    return {
-        "email": registered_user.email,
-        "password": registered_user.password,
-    }
+    return LoginPayload(email=registered_user.email, password=registered_user.password)
 
 @pytest.fixture(scope="session")
 def session() -> Generator[requests.Session, None, None]:
@@ -122,7 +119,7 @@ def created_movie(super_admin: User, movie_data: MoviePayload) -> Generator[Movi
     Создаёт фильм через POST /movies от имени SUPER_ADMIN, отдаёт модель ответа.
     В teardown удаляет фильм через DELETE /movies/{id}.
     """
-    response = super_admin.api.movies_api.create_movie(movie_data.model_dump())
+    response = super_admin.api.movies_api.create_movie(movie_data)
     movie = MovieResponse(**response.json())
 
     yield movie
@@ -203,14 +200,19 @@ def creation_user_data(fresh_user: UserPayload) -> UserPayload:
     return updated_data
 
 @pytest.fixture(scope="module")
-def db_session() -> Generator[Session, None, None]:
+def db_client() -> DBClient:
+    """Фикстура, создающая DBClient (sessionmaker/engine)."""
+    return DBClient()
+
+
+@pytest.fixture(scope="module")
+def db_session(db_client: DBClient) -> Generator[Session, None, None]:
     """
     Фикстура, которая создает и возвращает сессию для работы с базой данных
     После завершения теста сессия автоматически закрывается
     """
-    db_session = get_db_session()
-    yield db_session
-    db_session.close()
+    with db_client.get_session() as db_session:
+        yield db_session
 
 @pytest.fixture(scope="function")
 def db_helper(db_session) -> DBHelper:

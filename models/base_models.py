@@ -16,7 +16,6 @@ class UserPayload(BaseModel):
 
     @field_validator("passwordRepeat")
     def check_password_repeat(cls, value: str, info) -> str:
-        # Проверяем совпадение паролей
         if "password" in info.data and value != info.data["password"]:
             raise ValueError("Пароли не совпадают")
         return value
@@ -34,12 +33,18 @@ class RegisterUserResponse(BaseModel):
 
     @field_validator("createdAt")
     def validate_created_at(cls, value: str) -> str:
-        # Валидатор для проверки формата даты и времени (ISO 8601).
         try:
             datetime.datetime.fromisoformat(value)
         except ValueError:
             raise ValueError("Некорректный формат даты и времени. Ожидается формат ISO 8601.")
         return value
+    model_config = {"populate_by_name": True}
+
+
+class LoginPayload(BaseModel):
+    """Тело запроса POST /login: email и password."""
+    email: str
+    password: str
 
 
 class LoginUserInfo(BaseModel):
@@ -62,10 +67,11 @@ class MoviePayload(BaseModel):
     name: str
     price: int
     description: str
-    imageUrl: Optional[str] = None
+    imageUrl: Optional[str] = Field(default=None, alias="image_url")
     location: str
     published: bool = True
-    genreId: int = 1
+    genreId: int = Field(default=1, alias="genre_id")
+    model_config = {"populate_by_name": True}
 
 
 class MovieResponse(BaseModel):
@@ -75,10 +81,48 @@ class MovieResponse(BaseModel):
     price: int
     description: str
     location: str
-    imageUrl: Optional[str] = None
+    imageUrl: Optional[str] = Field(default=None, alias="image_url")
     published: bool = True
-    genreId: int = 1
+    genreId: int = Field(default=1, alias="genre_id")
+    model_config = {"populate_by_name": True}
     reviews: Optional[List[dict]] = None
+
+
+class MoviePatchPayload(BaseModel):
+    """Тело запроса PATCH /movies/{id} — все поля опциональны."""
+    name: Optional[str] = None
+    price: Optional[int] = None
+    description: Optional[str] = None
+    imageUrl: Optional[str] = Field(default=None, alias="image_url")
+    location: Optional[str] = None
+    published: Optional[bool] = None
+    genreId: Optional[int] = Field(default=None, alias="genre_id")
+    model_config = {"populate_by_name": True}
+
+
+class GetMoviesParams(BaseModel):
+    """Query-параметры GET /movies."""
+    pageSize: Optional[str] = None
+    page: Optional[str] = None
+    minPrice: Optional[str] = None
+    maxPrice: Optional[str] = None
+    locations: Optional[str] = None
+    published: Optional[str] = None
+    genreId: Optional[str] = None
+    createdAt: Optional[str] = None
+
+
+class UserDBCreatePayload(BaseModel):
+    """Данные для создания пользователя в БД (create_test_user)."""
+    id: str
+    email: str
+    full_name: str
+    password: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    verified: bool = False
+    banned: bool = False
+    roles: str = "{USER}"
 
 
 class MoviesListResponse(BaseModel):

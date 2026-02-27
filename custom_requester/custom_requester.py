@@ -55,6 +55,10 @@ class CustomRequester:
 
         if isinstance(data, BaseModel):
             data = json.loads(data.model_dump_json(exclude_unset=True))
+        # Support Pydantic models for query params as well
+        if isinstance(params, BaseModel):
+            # convert to dict excluding None values
+            params = params.model_dump(exclude_none=True)
 
         response = self.session.request(
             method, f"{self.base_url}{endpoint}", json=data, params=params, headers=self.headers
@@ -64,7 +68,10 @@ class CustomRequester:
             self.log_request_and_response(response)
 
         if response.status_code != expected_status:
-            raise ValueError(f"Unexpected status code: {response.status_code}. Expected: {expected_status}")
+            body = response.text
+            raise ValueError(
+                f"Unexpected status code: {response.status_code}. Expected: {expected_status}\nResponse body: {body}"
+            )
 
         return response
 
@@ -106,18 +113,18 @@ class CustomRequester:
                 f"{body}"
             )
 
-            #Обрабатываем ответ
+            # Обрабатываем ответ
             response_status = response.status_code
             is_success = response.ok
             response_data = response.text
 
-            #Попытка сформировать JSON
+            # Попытка сформировать JSON
             try:
                 response_data = json.dumps(json.loads(response.text), indent=4, ensure_ascii=False)
             except json.JSONDecodeError:
                 pass
 
-            #Логируем ответ
+            # Логируем ответ
             self.logger.info(f"\n{'=' * 40} RESPONSE {'=' * 40}")
             if not is_success:
                 self.logger.info(

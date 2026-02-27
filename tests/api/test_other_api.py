@@ -3,29 +3,31 @@ import time
 
 import allure
 import pytest
+from pytest_check import check
 from requests import Session
 
 from db_models.transaction import AccountTransactionTemplate
 from utils.data_generator import DataGenerator
-
-
+pytestmark = [pytest.mark.api, pytest.mark.regression]
 @allure.epic("Тестирование транзакций")
 @allure.feature("Тестирование транзакций между счетами")
+@allure.label("qa_name", "Viktor")
 class TestAccountTransactionTemplate:
 
     @allure.story("Корректность перевода денег между двумя счетами")
-    @allure.description("""
-    Этот тест проверяет корректность перевода денег между двумя счетами.
-    Шаги:
-    1. Создание двух счетов: Stan и Bob.
-    2. Перевод 200 единиц от Stan к Bob.
-    3. Проверка изменения балансов.
-    4. Очистка тестовых данных.
-    """)
     @allure.severity(allure.severity_level.CRITICAL)
-    @allure.label("qa_name", "Ivan Petrovich")
     @allure.title("Тест перевода денег между счетами 200 рублей")
+    @pytest.mark.transactions_smoke
+    @pytest.mark.smoke
     def test_accounts_transaction_template(self, db_session: Session):
+        """
+        Этот тест проверяет корректность перевода денег между двумя счетами.
+        Шаги:
+        1. Создание двух счетов: Stan и Bob.
+        2. Перевод 200 единиц от Stan к Bob.
+        3. Проверка изменения балансов.
+        4. Очистка тестовых данных.
+        """
         # ====================================================================== Подготовка к тесту
         with allure.step("Создание тестовых данных в базе данных: счета Stan и Bob"):
             stan = AccountTransactionTemplate(user=f"Stan_{DataGenerator.generate_random_int(10)}", balance=1000)
@@ -56,16 +58,18 @@ class TestAccountTransactionTemplate:
 
         # ====================================================================== Тест
         with allure.step("Проверяем начальные балансы"):
-            assert stan.balance == 1000
-            assert bob.balance == 500
+            with check:
+                check.equal(stan.balance, 1000)
+                check.equal(bob.balance, 500)
 
         try:
             with allure.step("Выполняем перевод 200 единиц от stan к bob"):
                 transfer_money(db_session, from_account=stan.user, to_account=bob.user, amount=200)
 
             with allure.step("Проверяем, что балансы изменились"):
-                assert stan.balance == 800
-                assert bob.balance == 700
+                with check:
+                    check.equal(stan.balance, 800)
+                    check.equal(bob.balance, 700)
 
         except Exception as e:
             with allure.step("ОШИБКА откаты транзакции"):
@@ -87,8 +91,11 @@ def delay_between_retries():
 
 
 @allure.title("Тест с перезапусками")
+@allure.severity(allure.severity_level.MINOR)
+@allure.label("qa_name", "Viktor")
 @pytest.mark.flaky(reruns=3)
 def test_with_retries(delay_between_retries):
+    """Демонстрация pytest-flaky: тест с reruns=3 при случайном падении."""
     with allure.step("Шаг 1: Проверка случайного значения"):
         result = random.choice([True, False])
         assert result, "Тест упал, потому что результат False"

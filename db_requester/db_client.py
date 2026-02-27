@@ -1,23 +1,41 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from resources.db_creds import MoviesDbCreds
+from contextlib import contextmanager
+from typing import Generator
 
-USERNAME = MoviesDbCreds.USERNAME
-PASSWORD = MoviesDbCreds.PASSWORD
-HOST = MoviesDbCreds.HOST
-PORT = MoviesDbCreds.PORT
-DATABASE_NAME = MoviesDbCreds.DATABASE_NAME
+class DBClient:
+    """Клиент для работы с подключением к БД — создаёт engine и фабрику сессий."""
 
-#  движок для подключения к базе данных
-engine = create_engine(
-    f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}",
-    echo=False  # Установить True для отладки SQL запросов
-)
+    def __init__(
+        self,
+        username: str | None = None,
+        password: str | None = None,
+        host: str | None = None,
+        port: str | None = None,
+        database: str | None = None,
+        echo: bool = False,
+    ):
 
-#  создаем фабрику сессий
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        username = username or MoviesDbCreds.USERNAME
+        password = password or MoviesDbCreds.PASSWORD
+        host = host or MoviesDbCreds.HOST
+        port = port or MoviesDbCreds.PORT
+        database = database or MoviesDbCreds.DATABASE_NAME
+        self.engine = create_engine(
+            f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}",
+            echo=echo,
+        )
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+
+    @contextmanager
+    def get_session(self) -> Generator:
+        """Контекстный менеджер возвращает новый Session и гарантированно закрывает его."""
+        session = self.SessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
 
 
-def get_db_session():
-    """Создает новую сессию БД"""
-    return SessionLocal()
+

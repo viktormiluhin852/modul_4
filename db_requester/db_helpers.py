@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 
 from db_models.user import UserDBModel
 from db_models.movies import MovieDBModel
+from models.base_models import MoviePayload, UserDBCreatePayload
+from db_models.movies import MovieDBModel
+from db_models.user import UserDBModel
 
 
 class DBHelper:
@@ -9,9 +12,9 @@ class DBHelper:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    def create_test_user(self, user_data: dict) -> UserDBModel:
+    def create_test_user(self, user_data: UserDBCreatePayload) -> UserDBModel:
         """Создает тестового пользователя"""
-        user = UserDBModel(**user_data)
+        user = UserDBModel.from_payload(user_data)
         self.db_session.add(user)
         self.db_session.commit()
         self.db_session.refresh(user)
@@ -25,11 +28,9 @@ class DBHelper:
         """Получает пользователя по email"""
         return self.db_session.query(UserDBModel).filter(UserDBModel.email == email).first()
 
-    def create_test_movie(self, data: dict) -> MovieDBModel:
-        """Создаёт тестовый фильм в БД. Принимает dict с полями таблицы (snake_case)."""
-        data = dict(data)
-        data.setdefault("rating", None)
-        movie = MovieDBModel(**data)
+    def create_test_movie(self, payload: MoviePayload) -> MovieDBModel:
+        """Создаёт тестовый фильм в БД. Принимает MoviePayload."""
+        movie = MovieDBModel.from_payload(payload)
         self.db_session.add(movie)
         self.db_session.commit()
         self.db_session.refresh(movie)
@@ -54,11 +55,3 @@ class DBHelper:
             if obj:
                 self.db_session.delete(obj)
         self.db_session.commit()
-
-
-'''
-Пример хелпера для movies
-def get_movie_by_id(self, movie_id: str):
-    """Получает фильм по ID"""
-    return self.db_session.query(MovieDBModel).filter(MovieDBModel.id == movie_id).first()
-'''

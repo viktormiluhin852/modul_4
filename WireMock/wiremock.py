@@ -1,4 +1,6 @@
+import allure
 import requests
+
 
 # Настройка WireMock для мока
 def setup_wiremock_mock():
@@ -19,10 +21,15 @@ def setup_wiremock_mock():
     }
     response = requests.post(url, json=payload) #Отправляем запрос на наш WireMock
 
-# Тест с использованием WireMock
+@allure.title("Тест WireMock — мок /gismeteo/get/weather")
+@allure.severity(allure.severity_level.NORMAL)
+@allure.label("qa_name", "Viktor")
 def test_wiremock():
-    setup_wiremock_mock()
-    response = requests.get("http://localhost:8088/gismeteo/get/weather")
-    assert response.status_code == 200
-    assert response.json() == {"temperature": 25}
-    print("Test passed!")
+    """Проверка WireMock: настройка мока и запрос возвращает ожидаемый ответ."""
+    with allure.step("Настройка WireMock для /gismeteo/get/weather"):
+        setup_wiremock_mock()
+    with allure.step("GET /gismeteo/get/weather — проверка ответа"):
+        response = requests.get("http://localhost:8088/gismeteo/get/weather")
+    with allure.step("Проверка: статус 200 и тело ответа"):
+        assert response.status_code == 200
+        assert response.json() == {"temperature": 25}

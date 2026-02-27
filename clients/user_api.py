@@ -58,6 +58,6 @@ class UserAPI(CustomRequester):
         return self.send_request(
             method="POST",
             endpoint=USER_ENDPOINT,
-            data=user_data.model_dump(mode="json"),
+            data=user_data,
             expected_status=expected_status
         )

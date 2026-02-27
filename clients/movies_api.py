@@ -1,12 +1,13 @@
 """
 Клиент Movies API: список фильмов, CRUD по фильму (хост api.dev-cinescope).
 """
-from typing import Dict, Optional
+from typing import Optional
 
 import requests
 
 from constants.constants import BASE_URL, MOVIES_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from models.base_models import GetMoviesParams, MoviePatchPayload, MoviePayload
 
 
 class MoviesAPI(CustomRequester):
@@ -22,7 +23,11 @@ class MoviesAPI(CustomRequester):
         """
         super().__init__(session, base_url=base_url)
 
-    def get_movies(self, params: Optional[Dict[str, str]] = None, expected_status: int = 200) -> requests.Response:
+    def get_movies(
+        self,
+        params: Optional[GetMoviesParams] = None,
+        expected_status: int = 200,
+    ) -> requests.Response:
         """
         GET /movies — список афиш с пагинацией и фильтрами.
         :param params: Опциональные query: pageSize, page, minPrice, maxPrice, locations, published, genreId, createdAt.
@@ -49,10 +54,14 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def create_movie(self, data: dict, expected_status: int = 201) -> requests.Response:
+    def create_movie(
+        self,
+        data: MoviePayload | MoviePatchPayload,
+        expected_status: int = 201,
+    ) -> requests.Response:
         """
         POST /movies — создание фильма. Требуется SUPER_ADMIN.
-        :param data: Тело запроса: name, price, description, imageUrl, location, published, genreId (dict или MoviePayload.model_dump()).
+        :param data: Модель MoviePayload или MoviePatchPayload (для негативных тестов с неполным телом).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
@@ -63,11 +72,13 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def edit_movie(self, movie_id: int, data: dict, expected_status: int = 200) -> requests.Response:
+    def edit_movie(
+        self, movie_id: int, data: MoviePatchPayload, expected_status: int = 200
+    ) -> requests.Response:
         """
         PATCH /movies/{id} — редактирование фильма. Требуется SUPER_ADMIN.
         :param movie_id: Идентификатор фильма.
-        :param data: Поля для обновления: name, description, price, location, imageUrl, published, genreId (dict или MoviePayload.model_dump()).
+        :param data: Модель MoviePatchPayload (все поля опциональны).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
         :return: requests.Response.
         """

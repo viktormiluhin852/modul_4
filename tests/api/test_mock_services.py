@@ -2,6 +2,9 @@ import datetime
 import os
 import sys
 
+import allure
+import pytest
+from pytest_check import check
 import pytz
 import requests
 from constants.constants import BASE_URL, HEADERS, REGISTER_ENDPOINT, LOGIN_ENDPOINT
@@ -45,6 +48,8 @@ class WhatIsTodayResponse(BaseModel):
 WORLDCLOCK_BASE_URL = os.getenv("WORLDCLOCK_API_URL", "http://worldclockapi.com")
 FAKE_WORLDCLOCK_URL = "http://127.0.0.1:16001/fake/worldclockapi"
 
+pytestmark = [pytest.mark.api, pytest.mark.regression]
+
 
 def _setup_worldclockap_wiremock(url: str = "http://localhost:8088") -> None:
     """Настраивает WireMock: GET /api/json/utc/now → fake worldclockapi."""
@@ -81,6 +86,7 @@ def get_worldclockap_time(base_url: str = None) -> WorldClockResponse:
     return WorldClockResponse(**response.json())
 
 
+@allure.label("qa_name", "Viktor")
 class TestTodayIsHolidayServiceAPI:
     @staticmethod
     def stub_get_worldclockap_time():
@@ -89,93 +95,100 @@ class TestTodayIsHolidayServiceAPI:
 
         return StubWorldClockResponse()
 
-    # worldclockap
-    def test_worldclockap(self):  # проверка работоспособности сервиса worldclockap
-        _setup_worldclockap_wiremock()
-        world_clock_response = get_worldclockap_time(base_url="http://localhost:8088")
-        # Выводим текущую дату и время
-        current_date_time = world_clock_response.currentDateTime
-        print(f"Текущая дата и время: {current_date_time=}")
+    @allure.title("Проверка worldclockapi через WireMock")
+    @allure.severity(allure.severity_level.NORMAL)
+    @pytest.mark.mock_smoke
+    @pytest.mark.smoke
+    def test_worldclockap(self):
+        """Проверка работоспособности worldclockapi через WireMock stub."""
+        with allure.step("Настройка WireMock и запрос к worldclockapi"):
+            _setup_worldclockap_wiremock()
+            world_clock_response = get_worldclockap_time(base_url="http://localhost:8088")
+            current_date_time = world_clock_response.currentDateTime
+        with allure.step("Проверка совпадения даты"):
+            assert current_date_time == datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%MZ"), "Дата не совпадает"
 
-        assert current_date_time == datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%MZ"), "Дата не совпадает"
+    @allure.title("Проверка what_is_today через WireMock")
+    @allure.severity(allure.severity_level.NORMAL)
+    @pytest.mark.mock_smoke
+    @pytest.mark.smoke
+    def test_what_is_today(self):
+        """Проверка Fake-сервиса what_is_today с данными из WireMock."""
+        with allure.step("Получение времени из worldclockapi и запрос what_is_today"):
+            _setup_worldclockap_wiremock()
+            world_clock_response = get_worldclockap_time(base_url="http://localhost:8088")
+            what_is_today_response = requests.post(
+                "http://127.0.0.1:16002/what_is_today",
+                json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump(),
+            )
+        with allure.step("Проверка ответа what_is_today"):
+            with check:
+                check.equal(what_is_today_response.status_code, 200, "Удаленный сервис недоступен")
+                what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
+                check.equal(what_is_today_data.message, "Сегодня нет праздников в России.", "Сегодня нет праздника!")
 
-    def test_what_is_today(self):  # проверка работоспособности Fake сервиса what_is_today
-        _setup_worldclockap_wiremock()
-        world_clock_response = get_worldclockap_time(base_url="http://localhost:8088")
-
-        what_is_today_response = requests.post("http://127.0.0.1:16002/what_is_today",
-                                               json=DateTimeRequest(
-                                                   currentDateTime=world_clock_response.currentDateTime).model_dump())
-
-        # Проверяем статус ответа от тестируемогосервиса
-        assert what_is_today_response.status_code == 200, "Удаленный сервис недоступен"
-        # Парсим JSON-ответ от тестируемого сервиса с использованием Pydantic модели
-        what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
-        # Проводим валидацию ответа тестируемого сервиса
-        assert what_is_today_data.message == "Сегодня нет праздников в России.", "Сегодня нет праздника!"
-
+    @allure.title("Проверка Fake-сервиса worldclockapi (порт 16001)")
+    @allure.severity(allure.severity_level.NORMAL)
     def test_fake_worldclockap(self):
         """Проверка Fake-сервиса worldclockapi (FastAPI на порту 16001)."""
-        world_clock_response = get_worldclockap_time(base_url=FAKE_WORLDCLOCK_URL)
-        current_date_time = world_clock_response.currentDateTime
-        print(f"Текущая дата и время: {current_date_time=}")
-        assert current_date_time == datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%MZ"), "Дата не совпадает"
+        with allure.step("Запрос к Fake worldclockapi"):
+            world_clock_response = get_worldclockap_time(base_url=FAKE_WORLDCLOCK_URL)
+            current_date_time = world_clock_response.currentDateTime
+        with allure.step("Проверка совпадения даты"):
+            assert current_date_time == datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%MZ"), "Дата не совпадает"
 
+    @allure.title("Проверка what_is_today с Fake worldclockapi")
+    @allure.severity(allure.severity_level.NORMAL)
     def test_fake_what_is_today(self):
         """Проверка what_is_today с использованием Fake-сервиса worldclockapi."""
-        world_clock_response = get_worldclockap_time(base_url=FAKE_WORLDCLOCK_URL)
-        what_is_today_response = requests.post(
-            "http://127.0.0.1:16002/what_is_today",
-            json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump(),
-        )
-        assert what_is_today_response.status_code == 200, "Удаленный сервис недоступен"
-        what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
-        assert what_is_today_data.message == "Сегодня нет праздников в России.", "Сегодня нет праздника!"
-
-    def test_what_is_today_BY_MOCK(self, mocker):
-        # Создаем мок для функции get_worldclockap_time
-        mocker.patch(
-            "test_mock_services.get_worldclockap_time",
-            # Указываем путь к функции в нашем модуле (формат файл.класс.метод)
-            # либо имя_файла.имя_метода если он находится  вэтом же файле
-            return_value=Mock(
-                currentDateTime="2025-01-01T00:00Z"  # Фиксированная дата для возврата из мок функции "1 января"
+        with allure.step("Запрос к Fake worldclockapi и what_is_today"):
+            world_clock_response = get_worldclockap_time(base_url=FAKE_WORLDCLOCK_URL)
+            what_is_today_response = requests.post(
+                "http://127.0.0.1:16002/what_is_today",
+                json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump(),
             )
-        )
+        with allure.step("Проверка ответа"):
+            with check:
+                check.equal(what_is_today_response.status_code, 200, "Удаленный сервис недоступен")
+                what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
+                check.equal(what_is_today_data.message, "Сегодня нет праздников в России.", "Сегодня нет праздника!")
 
-        # Выполним тело предыдущего теста еще раз
-        world_clock_response = get_worldclockap_time()  # = "2025-01-01T00:00Z"
+    @allure.title("what_is_today с Mock — Новый год")
+    @allure.severity(allure.severity_level.MINOR)
+    def test_what_is_today_BY_MOCK(self, mocker):
+        """Подмена get_worldclockap_time через Mock (2025-01-01) — ожидаем «Новый год»."""
+        with allure.step("Мокаем get_worldclockap_time (2025-01-01)"):
+            mocker.patch(
+                "test_mock_services.get_worldclockap_time",
+                return_value=Mock(currentDateTime="2025-01-01T00:00Z"),
+            )
+        with allure.step("Запрос what_is_today с замоканной датой"):
+            world_clock_response = get_worldclockap_time()
+            what_is_today_response = requests.post(
+                "http://127.0.0.1:16002/what_is_today",
+                json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump(),
+            )
+        with allure.step("Проверка: ожидаем «Новый год»"):
+            with check:
+                check.equal(what_is_today_response.status_code, 200, "Удаленный сервис недоступен")
+                what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
+                check.equal(what_is_today_data.message, "Новый год", "ДОЛЖЕН БЫТЬ НОВЫЙ ГОД!")
 
-        what_is_today_response = requests.post("http://127.0.0.1:16002/what_is_today",
-                                                json=DateTimeRequest(
-                                                    currentDateTime=world_clock_response.currentDateTime).model_dump())
-
-        # Проверяем статус ответа от тестируемого сервиса
-        assert what_is_today_response.status_code == 200, "Удаленный сервис недоступен"
-        # Парсим JSON-ответ от тестируемого сервиса с использованием Pydantic модели
-        what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
-
-        assert what_is_today_data.message == "Новый год", "ДОЛЖЕН БЫТЬ НОВЫЙ ГОД!"
-
-    # Тест с использованием Stub
+    @allure.title("what_is_today с Stub — День Победы")
+    @allure.severity(allure.severity_level.MINOR)
     def test_what_is_today_BY_STUB(self, monkeypatch):
-        # Подменяем реальную функцию get_worldclockap_time на Stub
-        monkeypatch.setattr(sys.modules[__name__], "get_worldclockap_time", self.stub_get_worldclockap_time)
-        # или же можем просто напрямую взять значение из Stub world_clock_response = stub_get_worldclockap_time()
-
-        # Выполним тело предыдущего теста еще раз
-        world_clock_response = get_worldclockap_time() # Произойдет вызов Stub, возвращающего "2025-01-01T00:00Z"
-
-        # Выполняем запрос к тестируемому сервису
-        what_is_today_response = requests.post(
-            "http://127.0.0.1:16002/what_is_today",
-            json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump()
-        )
-
-        # Проверяем статус ответа от тестируемого сервиса
-        assert what_is_today_response.status_code == 200, "Удаленный сервис недоступен"
-        # Парсим JSON-ответ от тестируемого сервиса с использованием Pydantic модели
-        what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
-        # Проверяем, что ответ соответствует ожидаемому
-        assert what_is_today_data.message == "День Победы", "ДОЛЖЕН БЫТЬ ДЕНЬ ПОБЕДЫ!"
+        """Подмена get_worldclockap_time через Stub (День Победы) — ожидаем «День Победы»."""
+        with allure.step("Подменяем get_worldclockap_time на Stub (День Победы)"):
+            monkeypatch.setattr(sys.modules[__name__], "get_worldclockap_time", self.stub_get_worldclockap_time)
+        with allure.step("Запрос what_is_today с Stub-датой"):
+            world_clock_response = get_worldclockap_time()
+            what_is_today_response = requests.post(
+                "http://127.0.0.1:16002/what_is_today",
+                json=DateTimeRequest(currentDateTime=world_clock_response.currentDateTime).model_dump(),
+            )
+        with allure.step("Проверка: ожидаем «День Победы»"):
+            with check:
+                check.equal(what_is_today_response.status_code, 200, "Удаленный сервис недоступен")
+                what_is_today_data = WhatIsTodayResponse(**what_is_today_response.json())
+                check.equal(what_is_today_data.message, "День Победы", "ДОЛЖЕН БЫТЬ ДЕНЬ ПОБЕДЫ!")
 

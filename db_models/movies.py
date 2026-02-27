@@ -4,6 +4,7 @@ from sqlalchemy.orm import declarative_base, DeclarativeMeta
 from typing import Dict, Any
 from models.base_models import MovieResponse
 from datetime import datetime, timezone
+import allure
 
 Base: DeclarativeMeta = declarative_base()
 
@@ -25,6 +26,7 @@ class MovieDBModel(Base):
     genre_id = Column(Integer)
     created_at = Column(DateTime)
 
+    @allure.step("to_model MovieDBModel")
     def to_model(self) -> MovieResponse:
         """Преобразование в Pydantic модель MovieResponse."""
         data = {
@@ -45,6 +47,7 @@ class MovieDBModel(Base):
         return f"<Movie(id={self.id}, name='{self.name}')>"
 
     @classmethod
+    @allure.step("from_payload MovieDBModel")
     def from_payload(cls, payload) -> "MovieDBModel":
         """Создать экземпляр MovieDBModel из MoviePayload (не коммитит)."""
         data = payload.model_dump(by_alias=True, exclude_none=True)

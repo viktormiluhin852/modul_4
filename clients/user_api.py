@@ -3,6 +3,7 @@
 """
 import requests
 import pytest
+import allure
 
 from constants.constants import AUTH_BASE_URL, USER_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
@@ -22,6 +23,7 @@ class UserAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
+    @allure.step("GET /user/{user_locator} — получение информации о пользователе")
     def get_user_info(self, user_locator: str, expected_status: int = 200) -> requests.Response:
         """
         GET /user/{locator} — получение информации о пользователе.
@@ -35,6 +37,7 @@ class UserAPI(CustomRequester):
             expected_status=expected_status
         )
 
+    @allure.step("DELETE /user/{user_id} — удаление пользователя")
     def delete_user(self, user_id: str, expected_status: int = 200) -> requests.Response:
         """
         DELETE /user/{id} — удаление пользователя (USER только себя).
@@ -48,6 +51,7 @@ class UserAPI(CustomRequester):
             expected_status=expected_status
         )
 
+    @allure.step("POST /user — создание пользователя")
     def create_user(self, user_data: UserPayload, expected_status: int = 201) -> requests.Response:
         """
         POST /user — создание пользователя. Требуется SUPER_ADMIN.

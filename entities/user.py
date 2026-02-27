@@ -1,4 +1,6 @@
 from api.api_manager import ApiManager
+import allure
+
 
 class User:
     def __init__(self, email: str, password: str, roles: list, api: ApiManager):
@@ -8,8 +10,10 @@ class User:
         self.api = api  # Сюда будем передавать экземпляр API Manager для запросов
 
     @property
+    @allure.step("get user creds")
     def creds(self):
         """Возвращает кортеж (email, password)"""
-        return self.email, self.password
+        with allure.step("get user creds"):
+            return self.email, self.password
 
 

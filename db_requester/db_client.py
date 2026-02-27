@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from resources.db_creds import MoviesDbCreds
 from contextlib import contextmanager
 from typing import Generator
+import allure
 
 class DBClient:
     """Клиент для работы с подключением к БД — создаёт engine и фабрику сессий."""
@@ -33,7 +34,8 @@ class DBClient:
         """Контекстный менеджер возвращает новый Session и гарантированно закрывает его."""
         session = self.SessionLocal()
         try:
-            yield session
+            with allure.step("get DB session"):
+                yield session
         finally:
             session.close()
 

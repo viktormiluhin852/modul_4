@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.orm import declarative_base, DeclarativeMeta
 from typing import Dict, Any
 from models.base_models import RegisterUserResponse
+import allure
 
 Base: DeclarativeMeta = declarative_base()
 
@@ -38,6 +39,7 @@ class UserDBModel(Base):
         return f"<User(id='{self.id}', email='{self.email}')>"
 
     @classmethod
+    @allure.step("from_payload UserDBModel")
     def from_payload(cls, payload) -> "UserDBModel":
         """Создать экземпляр UserDBModel из UserDBCreatePayload (не коммитит)."""
         data = payload.model_dump(by_alias=True, exclude_none=True)

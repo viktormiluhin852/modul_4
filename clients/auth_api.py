@@ -2,6 +2,7 @@
 Клиент Auth API: регистрация, логин, установка Bearer в сессию.
 """
 import requests
+import allure
 
 from constants.constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
@@ -20,6 +21,7 @@ class AuthAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
+    @allure.step("POST /register — регистрация пользователя")
     def register_user(self, user_data: UserPayload, expected_status: int = 201) -> requests.Response:
         """
         POST /register — регистрация нового пользователя.
@@ -34,6 +36,7 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
+    @allure.step("POST /login — авторизация")
     def login_user(
         self, login_data: LoginPayload | None, expected_status: int = 201
     ) -> requests.Response:
@@ -50,6 +53,7 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
+    @allure.step("Authenticate user and set Bearer token")
     def authenticate(self, email: str, password: str) -> None:
         """
         Выполняет логин и записывает Bearer-токен в заголовки сессии.

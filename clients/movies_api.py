@@ -4,6 +4,7 @@
 from typing import Optional
 
 import requests
+import allure
 
 from constants.constants import BASE_URL, MOVIES_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
@@ -23,6 +24,7 @@ class MoviesAPI(CustomRequester):
         """
         super().__init__(session, base_url=base_url)
 
+    @allure.step("GET /movies — получение списка (params={params})")
     def get_movies(
         self,
         params: Optional[GetMoviesParams] = None,
@@ -41,6 +43,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status
         )
 
+    @allure.step("GET /movies/{movie_id} — получение фильма")
     def get_movie(self, movie_id: int, expected_status: int = 200) -> requests.Response:
         """
         GET /movies/{id} — получение одного фильма (в т.ч. отзывы).
@@ -54,6 +57,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
+    @allure.step("POST /movies — создание фильма")
     def create_movie(
         self,
         data: MoviePayload | MoviePatchPayload,
@@ -72,6 +76,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
+    @allure.step("PATCH /movies/{movie_id} — редактирование фильма")
     def edit_movie(
         self, movie_id: int, data: MoviePatchPayload, expected_status: int = 200
     ) -> requests.Response:
@@ -89,6 +94,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
+    @allure.step("DELETE /movies/{movie_id} — удаление фильма")
     def delete_movie(self, movie_id: int, expected_status: int = 200) -> requests.Response:
         """
         DELETE /movies/{id} — удаление фильма. Требуется SUPER_ADMIN.

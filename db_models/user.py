@@ -19,7 +19,7 @@ class UserDBModel(Base):
     banned = Column(Boolean)
     roles = Column(String)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_model(self) -> RegisterUserResponse:
         """Преобразование в Pydantic модель RegisterUserResponse."""
         data = {
             "id": self.id,

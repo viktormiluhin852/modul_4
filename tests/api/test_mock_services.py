@@ -51,6 +51,9 @@ FAKE_WORLDCLOCK_URL = "http://127.0.0.1:16001/fake/worldclockapi"
 pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
+@allure.epic("Функциональные тесты")
+@allure.feature("Сервис what_is_today / worldclockapi")
+
 def _setup_worldclockap_wiremock(url: str = "http://localhost:8088") -> None:
     """Настраивает WireMock: GET /api/json/utc/now → fake worldclockapi."""
     now_str = datetime.now(pytz.utc).strftime("%Y-%m-%dT%H:%MZ")

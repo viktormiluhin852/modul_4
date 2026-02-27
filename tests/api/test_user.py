@@ -8,6 +8,8 @@ from models.base_models import UserPayload, RegisterUserResponse
 pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
+@allure.epic("Функциональные тесты")
+@allure.feature("API пользователей")
 @allure.label("qa_name", "Viktor")
 class TestUser:
     @allure.title("Создание пользователя (SUPER_ADMIN)")

@@ -19,7 +19,8 @@ from utils.data_generator import DataGenerator
 
 pytestmark = pytest.mark.api
 
-
+@allure.epic("Функциональные тесты")
+@allure.feature("API Movies")
 @allure.label("qa_name", "Viktor")
 class TestMoviesApi:
     """Позитивные и негативные проверки API Movies."""

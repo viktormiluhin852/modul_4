@@ -15,6 +15,8 @@ from models.base_models import LoginPayload, LoginResponse, UserPayload, Registe
 pytestmark = [pytest.mark.api, pytest.mark.regression]
 
 
+@allure.epic("Функциональные тесты")
+@allure.feature("Auth API")
 @allure.label("qa_name", "Viktor")
 class TestAuthApi:
     """Позитивные и негативные проверки Auth API (register, login)."""

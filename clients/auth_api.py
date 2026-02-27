@@ -2,9 +2,11 @@
 Клиент Auth API: регистрация, логин, установка Bearer в сессию.
 """
 import requests
+import allure
 
-from constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
+from constants.constants import AUTH_BASE_URL, REGISTER_ENDPOINT, LOGIN_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from models.base_models import LoginPayload, UserPayload
 
 
 class AuthAPI(CustomRequester):
@@ -19,10 +21,11 @@ class AuthAPI(CustomRequester):
         """
         super().__init__(session, base_url=AUTH_BASE_URL)
 
-    def register_user(self, user_data: dict, expected_status: int = 201) -> requests.Response:
+    @allure.step("POST /register — регистрация пользователя")
+    def register_user(self, user_data: UserPayload, expected_status: int = 201) -> requests.Response:
         """
         POST /register — регистрация нового пользователя.
-        :param user_data: Словарь с полями email, fullName, password, passwordRepeat, roles.
+        :param user_data: Модель UserPayload (email, fullName, password, passwordRepeat, roles).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
@@ -33,20 +36,24 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status
         )
 
-    def login_user(self, login_data: dict, expected_status: int = 200) -> requests.Response:
+    @allure.step("POST /login — авторизация")
+    def login_user(
+        self, login_data: LoginPayload | None, expected_status: int = 201
+    ) -> requests.Response:
         """
         POST /login — авторизация, возвращает accessToken и user в теле ответа.
-        :param login_data: Словарь с полями email, password.
-        :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
+        :param login_data: Модель LoginPayload (email, password) или None для пустого тела.
+        :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
         return self.send_request(
             method="POST",
             endpoint=LOGIN_ENDPOINT,
-            data=login_data,
+            data={} if login_data is None else login_data,
             expected_status=expected_status
         )
 
+    @allure.step("Authenticate user and set Bearer token")
     def authenticate(self, email: str, password: str) -> None:
         """
         Выполняет логин и записывает Bearer-токен в заголовки сессии.
@@ -55,7 +62,7 @@ class AuthAPI(CustomRequester):
         :param password: Пароль.
         :raises KeyError: Если в ответе нет accessToken.
         """
-        login_data = {"email": email, "password": password}
+        login_data = LoginPayload(email=email, password=password)
         response = self.login_user(login_data).json()
         if "accessToken" not in response:
             raise KeyError("token is missing")

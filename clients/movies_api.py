@@ -1,12 +1,14 @@
 """
 Клиент Movies API: список фильмов, CRUD по фильму (хост api.dev-cinescope).
 """
-from typing import Dict, Optional
+from typing import Optional
 
 import requests
+import allure
 
-from constants import BASE_URL, MOVIES_ENDPOINT
+from constants.constants import BASE_URL, MOVIES_ENDPOINT
 from custom_requester.custom_requester import CustomRequester
+from models.base_models import GetMoviesParams, MoviePatchPayload, MoviePayload
 
 
 class MoviesAPI(CustomRequester):
@@ -22,7 +24,12 @@ class MoviesAPI(CustomRequester):
         """
         super().__init__(session, base_url=base_url)
 
-    def get_movies(self, params: Optional[Dict[str, str]] = None, expected_status: int = 200) -> requests.Response:
+    @allure.step("GET /movies — получение списка (params={params})")
+    def get_movies(
+        self,
+        params: Optional[GetMoviesParams] = None,
+        expected_status: int = 200,
+    ) -> requests.Response:
         """
         GET /movies — список афиш с пагинацией и фильтрами.
         :param params: Опциональные query: pageSize, page, minPrice, maxPrice, locations, published, genreId, createdAt.
@@ -33,9 +40,10 @@ class MoviesAPI(CustomRequester):
             method="GET",
             endpoint=MOVIES_ENDPOINT,
             params=params,
-            expected_status=expected_status,
+            expected_status=expected_status
         )
 
+    @allure.step("GET /movies/{movie_id} — получение фильма")
     def get_movie(self, movie_id: int, expected_status: int = 200) -> requests.Response:
         """
         GET /movies/{id} — получение одного фильма (в т.ч. отзывы).
@@ -49,10 +57,15 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def create_movie(self, data: dict, expected_status: int = 201) -> requests.Response:
+    @allure.step("POST /movies — создание фильма")
+    def create_movie(
+        self,
+        data: MoviePayload | MoviePatchPayload,
+        expected_status: int = 201,
+    ) -> requests.Response:
         """
         POST /movies — создание фильма. Требуется SUPER_ADMIN.
-        :param data: Словарь: name, price, description, imageUrl, location, published, genreId.
+        :param data: Модель MoviePayload или MoviePatchPayload (для негативных тестов с неполным телом).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 201).
         :return: requests.Response.
         """
@@ -63,11 +76,14 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def edit_movie(self, movie_id: int, data: dict, expected_status: int = 200) -> requests.Response:
+    @allure.step("PATCH /movies/{movie_id} — редактирование фильма")
+    def edit_movie(
+        self, movie_id: int, data: MoviePatchPayload, expected_status: int = 200
+    ) -> requests.Response:
         """
         PATCH /movies/{id} — редактирование фильма. Требуется SUPER_ADMIN.
         :param movie_id: Идентификатор фильма.
-        :param data: Поля для обновления (name, description, price, location, imageUrl, published, genreId).
+        :param data: Модель MoviePatchPayload (все поля опциональны).
         :param expected_status: Ожидаемый HTTP-статус (по умолчанию 200).
         :return: requests.Response.
         """
@@ -78,6 +94,7 @@ class MoviesAPI(CustomRequester):
             expected_status=expected_status,
         )
 
+    @allure.step("DELETE /movies/{movie_id} — удаление фильма")
     def delete_movie(self, movie_id: int, expected_status: int = 200) -> requests.Response:
         """
         DELETE /movies/{id} — удаление фильма. Требуется SUPER_ADMIN.
